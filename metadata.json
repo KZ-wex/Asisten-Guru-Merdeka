@@ -1,0 +1,6 @@
+{
+  "name": "Asisten Guru Merdeka",
+  "description": "Asisten pembelajaran bertenaga AI untuk menyusun Modul Ajar Kurikulum Merdeka komprehensif dan Bank Soal evaluasi (HOTS/LOTS) interaktif secara instan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
