@@ -35,7 +35,6 @@ Proyek ini dibangun menggunakan ekosistem teknologi mutakhir dari Google untuk m
 | Teknologi | Peran dalam Sistem |
 | :--- | :--- |
 | **Google Gemini API (`gemini-1.5-flash`)** | Otak utama untuk *content generation*, analisis teks dokumen materi, dan *multimodal processing*. |
-| **Flutter** | *Framework frontend* untuk membangun aplikasi *cross-platform* (Web & Mobile) yang ringan dan inklusif untuk perangkat berspesifikasi rendah. |
 | **Cloud Firestore (Firebase)** | Database NoSQL *real-time* untuk sinkronisasi data modul, bank soal, dan portfolio siswa secara *offline-first*. |
 | **Firebase Authentication** | Sistem autentikasi yang aman dan instan menggunakan Google Sign-In bagi para guru. |
 | **Project IDX** | Cloud-native IDE dari Google yang digunakan tim untuk kolaborasi *coding* dan prototyping cepat selama hackathon. |
