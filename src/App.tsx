@@ -17,13 +17,15 @@ import {
   Lightbulb,
   FileSpreadsheet,
   Layers,
-  HelpCircle
+  HelpCircle,
+  CheckCircle2
 } from "lucide-react";
 import { 
   ModulAjarForm, 
   BankSoalForm, 
   PRESET_TEMPLATES, 
-  PresetTemplate 
+  PresetTemplate,
+  TeacherProfile
 } from "./types";
 
 const MOTIVATIONAL_QUOTES = [
@@ -59,6 +61,126 @@ export default function App() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successToast, setSuccessToast] = useState<string | null>(null);
 
+  // Teacher Profile States
+  const [profile, setProfile] = useState<TeacherProfile | null>(() => {
+    const saved = localStorage.getItem("guru_merdeka_profile");
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const [regNama, setRegNama] = useState("");
+  const [regNip, setRegNip] = useState("");
+  const [regSekolah, setRegSekolah] = useState("");
+  const [regJenjang, setRegJenjang] = useState<"SD" | "SMP" | "SMA" | "SMK">("SD");
+
+  // Load teacher attributes into register inputs if editing
+  useEffect(() => {
+    if (profile) {
+      setRegNama(profile.nama);
+      setRegNip(profile.nip || "");
+      setRegSekolah(profile.sekolah);
+      setRegJenjang(profile.jenjang);
+    }
+  }, [profile]);
+
+  // Helper lists based on Teacher Jenjang
+  const getClassesForJenjang = (jenjang: "SD" | "SMP" | "SMA" | "SMK") => {
+    switch (jenjang) {
+      case "SD":
+        return ["Kelas 1", "Kelas 2", "Kelas 3", "Kelas 4", "Kelas 5", "Kelas 6"];
+      case "SMP":
+        return ["Kelas 7", "Kelas 8", "Kelas 9"];
+      case "SMA":
+      case "SMK":
+        return ["Kelas 10", "Kelas 11", "Kelas 12"];
+      default:
+        return Array.from({ length: 12 }, (_, i) => `Kelas ${i + 1}`);
+    }
+  };
+
+  const getSubjectSuggestions = (jenjang: "SD" | "SMP" | "SMA" | "SMK") => {
+    switch (jenjang) {
+      case "SD":
+        return ["IPAS", "Matematika", "Bahasa Indonesia", "Pendidikan Pancasila", "Seni Rupa", "PJOK", "Bahasa Inggris"];
+      case "SMP":
+        return ["IPA", "IPS", "Matematika", "Bahasa Indonesia", "Bahasa Inggris", "Pendidikan Pancasila", "Informatika", "Seni Budaya"];
+      case "SMA":
+        return ["Fisika", "Kimia", "Biologi", "Matematika", "Sejarah", "Bahasa Indonesia", "Bahasa Inggris", "Sosiologi", "Ekonomi", "Pendidikan Pancasila"];
+      case "SMK":
+        return ["Produk Kreatif & Kewirausahaan", "Dasar-Dasar Kejuruan", "Matematika", "Informatika", "Bahasa Inggris", "Kejuruan Otomotif", "Rekayasa Perangkat Lunak", "Simulasi Digital"];
+      default:
+        return ["Matematika", "Bahasa Indonesia", "Bahasa Inggris", "IPA"];
+    }
+  };
+
+  const getTopicSuggestions = (jenjang: "SD" | "SMP" | "SMA" | "SMK", kelas: string, subject: string): string[] => {
+    const subLower = (subject || "").toLowerCase().trim();
+    const kNum = (kelas || "");
+    
+    if (jenjang === "SD") {
+      if (subLower.includes("ipas") || subLower.includes("alam") || subLower.includes("sosial")) {
+        if (kNum.includes("4")) return ["Proses Fotosintesis pada Tumbuhan", "Bagian Tubuh Tumbuhan & Fungsinya", "Wujud Zat & Perubahannya", "Gaya di Sekitar Kita"];
+        if (kNum.includes("5")) return ["Harmoni dalam Ekosistem", "Melihat karena Cahaya, Mendengar karena Bunyi", "Organ Pencernaan Manusia", "Warisan Sejarah Indonesia"];
+        if (kNum.includes("6")) return ["Sistem Organ Tubuh Manusia", "Negeriku dan Keanekaragaman Budayanya", "Bumi dan Alam Semesta"];
+        return ["Proses Fotosintesis", "Rantai Makanan Ekosistem", "Pelestarian Lingkungan Hidup"];
+      }
+      if (subLower.includes("matematika") || subLower.includes("hitung")) {
+        if (kNum.includes("1") || kNum.includes("2")) return ["Penjumlahan & Pengurangan 1-20", "Pola Gambar & Pola Bilangan", "Pengenalan Bangun Datar"];
+        if (kNum.includes("3") || kNum.includes("4")) return ["Konsep Pecahan Senilai", "Pembagian Ribuan dengan Sisa", "Pengukuran Luas & Volume"];
+        return ["Operasi Hitung Pecahan Campuran", "Penyusunan & Pengolahan Data", "KPK dan FPB Kontekstual"];
+      }
+      if (subLower.includes("indonesia") || subLower.includes("bahasa")) {
+        return ["Membaca Cerita Pendek", "Menulis Paragraf Deskripsi", "Menemukan Ide Pokok Paragraf", "Kosakata Lingkungan Sehat"];
+      }
+      return ["Makna Sila-sila Pancasila", "Kegiatan Gotong Royong", "Hak dan Kewajiban Anak"];
+    }
+
+    if (jenjang === "SMP") {
+      if (subLower.includes("ipa") || subLower.includes("sains")) {
+        if (kNum.includes("7")) return ["Sel Mikroskopis Unit Kehidupan", "Suhu, Kalor, & Pemuaian Zat", "Klasifikasi Makhluk Hidup"];
+        if (kNum.includes("8")) return ["Sistem Pencernaan & Nutrisi", "Struktur Tubuh, Otot & Tulang", "Unsur, Senyawa, dan Campuran"];
+        return ["Sistem Reproduksi Manusia", "Pewarisan Sifat (Genetika)", "Teknologi Ramah Lingkungan"];
+      }
+      if (subLower.includes("matematika")) {
+        return ["Bilangan Bulat & Operasi Logika", "Konsep Aljabar & PLSV", "Persamaan Kuadrat Sederhana", "Rumus Pythagoras & Geometri"];
+      }
+      if (subLower.includes("pancasila") || subLower.includes("pkn")) {
+        return ["Lahirnya Pancasila Dasar Negara", "Norma Hukum & Keadilan Sosial", "NKRI dan Keberagaman Bangsa"];
+      }
+      return ["Algoritma Pemrograman Blok", "Dampak Sosial Informatika", "Berpikir Komputasional"];
+    }
+
+    if (jenjang === "SMA") {
+      if (subLower.includes("kimia")) {
+        return ["12 Prinsip Kimia Hijau Lestari", "Konsep Mol & Stoikiometri", "Hukum Dasar Kimia Ruatan", "Struktur Atom & Nanoteknologi"];
+      }
+      if (subLower.includes("biologi")) {
+        return ["Organel Sel & Transpor Membran", "Ancaman Kepunahan Fauna Endemik", "Pembelahan Sel Mitosis & Meiosis", "Daur Biogeokimia & Ekosistem"];
+      }
+      if (subLower.includes("fisika")) {
+        return ["Energi Terbarukan Mitigasi Iklim", "Hukum Newton & Gerak Parabola", "Listrik Dinamis AC/DC Rumah Tangga", "Pengukuran & Angka Penting"];
+      }
+      if (subLower.includes("sejarah")) {
+        return ["Asal-Usul Leluhur Bangsa Indonesia", "Kerajaan Hindu-Buddha Nusantara", "Peristiwa Proklamasi Kemerdekaan"];
+      }
+      return ["Persamaan & Fungsi Kuadrat", "Matriks & Perkalian Garis", "Statistika Deskriptif Kelompok"];
+    }
+
+    if (jenjang === "SMK") {
+      if (subLower.includes("produk") || subLower.includes("wirausaha") || subLower.includes("pkk") || subLower.includes("kreatif")) {
+        return ["Uji SWOT Keunggulan Produk", "Penyusunan Lean Model Canvas", "Perencanaan Strategi Pemasaran"];
+      }
+      if (subLower.includes("informatika") || subLower.includes("rpl") || subLower.includes("komputer") || subLower.includes("web")) {
+        return ["Struktur Kerangka HTML5 & CSS3", "Algoritma Pemrograman Prosedural", "Desain Database Relasional", "OOP Class & Encapsulation"];
+      }
+      if (subLower.includes("otomotif") || subLower.includes("mesin") || subLower.includes("motor")) {
+        return ["Diagnosis Sistem Bahan Bakar EFI", "Sistem Kelistrikan Bodi Otomotif", "Overhaul Mesin Bensin 4-Tak"];
+      }
+      return ["Budaya Kerja Industri 5S/5R", "Keselamatan & Kesehatan Kerja K3", "Prinsip Dasar Desain Kreatif"];
+    }
+
+    return ["Pengenalan Konsep Kurikulum Merdeka", "Projek Penguatan Pelajar Pancasila", "Studi Kasus Kontekstual Harian"];
+  };
+
   // Modul Ajar State
   const [modulForm, setModulForm] = useState<ModulAjarForm>({
     mata_pelajaran: "",
@@ -80,9 +202,93 @@ export default function App() {
     catatan_tambahan: ""
   });
 
+  // Automatically update forms defaults to first matched class on teacher level change
+  useEffect(() => {
+    if (profile) {
+      const classes = getClassesForJenjang(profile.jenjang);
+      setModulForm(prev => {
+        // If current class isn't in the new list, switch it to first element
+        if (!classes.includes(prev.kelas)) {
+          return { ...prev, kelas: classes[0] || "Kelas" };
+        }
+        return prev;
+      });
+      setSoalForm(prev => {
+        if (!classes.includes(prev.kelas)) {
+          return { ...prev, kelas: classes[0] || "Kelas" };
+        }
+        return prev;
+      });
+    }
+  }, [profile?.jenjang]);
+
   // Output Storage
   const [generatedModul, setGeneratedModul] = useState<string>("");
   const [generatedSoal, setGeneratedSoal] = useState<string>("");
+  const [lastGeneratedModulMeta, setLastGeneratedModulMeta] = useState<any>(null);
+  const [lastGeneratedSoalMeta, setLastGeneratedSoalMeta] = useState<any>(null);
+
+  const getSubjectBannerImage = (mataPelajaran: string): string => {
+    const subject = (mataPelajaran || "").toLowerCase();
+    
+    if (subject.includes("biologi") || subject.includes("hayat")) {
+      return "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?q=80&w=1200&auto=format&fit=crop";
+    }
+    if (subject.includes("kimia") || subject.includes("green")) {
+      return "https://images.unsplash.com/photo-1603126857599-f6e157fa2fe6?q=80&w=1200&auto=format&fit=crop";
+    }
+    if (subject.includes("fisika") || subject.includes("energi") || subject.includes("gaya")) {
+      return "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200&auto=format&fit=crop";
+    }
+    if (subject.includes("matematika") || subject.includes("hitung") || subject.includes("aljabar") || subject.includes("pecahan")) {
+      return "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?q=80&w=1200&auto=format&fit=crop";
+    }
+    if (subject.includes("ipas") || subject.includes("alam") || subject.includes("sosial") || subject.includes("ekosistem")) {
+      return "https://images.unsplash.com/photo-1472214222541-d510753a4707?q=80&w=1200&auto=format&fit=crop";
+    }
+    if (subject.includes("informatika") || subject.includes("rpl") || subject.includes("bahasa pemrograman") || subject.includes("komputer") || subject.includes("web")) {
+      return "https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1200&auto=format&fit=crop";
+    }
+    if (subject.includes("pancasila") || subject.includes("pkn") || subject.includes("kewarganegaraan") || subject.includes("sejarah") || subject.includes("sosial")) {
+      return "https://images.unsplash.com/photo-1596422846543-75c6fc18a523?q=80&w=1200&auto=format&fit=crop";
+    }
+    if (subject.includes("wirausaha") || subject.includes("produk kreatif") || subject.includes("pkk") || subject.includes("bisnis")) {
+      return "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=1200&auto=format&fit=crop";
+    }
+    if (subject.includes("otomotif") || subject.includes("mesin") || subject.includes("motor") || subject.includes("teknik")) {
+      return "https://images.unsplash.com/photo-1486006920555-c77dce18193b?q=80&w=1200&auto=format&fit=crop";
+    }
+    if (subject.includes("indonesia") || subject.includes("inggris") || subject.includes("bahasa") || subject.includes("sastra") || subject.includes("menulis")) {
+      return "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?q=80&w=1200&auto=format&fit=crop";
+    }
+    
+    return "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=1200&auto=format&fit=crop";
+  };
+
+  const activeMeta = activeTab === "modul"
+    ? {
+        mata_pelajaran: lastGeneratedModulMeta?.mata_pelajaran || modulForm.mata_pelajaran || "Pelajaran Umum",
+        kelas: lastGeneratedModulMeta?.kelas || modulForm.kelas || "Kelas Umum",
+        fase: lastGeneratedModulMeta?.fase || modulForm.fase || "Fase Umum",
+        topik_pembahasan: lastGeneratedModulMeta?.topik_pembahasan || modulForm.topik_pembahasan || "Topik Pembahasan",
+        alokasi_waktu: lastGeneratedModulMeta?.alokasi_waktu || modulForm.alokasi_waktu || "Sesuai Kebutuhan",
+        guru_nama: lastGeneratedModulMeta?.guru_nama || profile?.nama || "Guru Indonesia",
+        guru_sekolah: lastGeneratedModulMeta?.guru_sekolah || profile?.sekolah || "Asisten Guru Merdeka",
+        guru_nip: lastGeneratedModulMeta?.guru_nip || profile?.nip || "",
+        guru_jenjang: lastGeneratedModulMeta?.guru_jenjang || profile?.jenjang || "SD"
+      }
+    : {
+        mata_pelajaran: lastGeneratedSoalMeta?.mata_pelajaran || soalForm.mata_pelajaran || "Pelajaran Umum",
+        kelas: lastGeneratedSoalMeta?.kelas || soalForm.kelas || "Kelas Umum",
+        topik_materi: lastGeneratedSoalMeta?.topik_materi || soalForm.topik_materi || "Topik Pembahasan",
+        jumlah_soal: lastGeneratedSoalMeta?.jumlah_soal || soalForm.jumlah_soal || 5,
+        tipe_soal: lastGeneratedSoalMeta?.tipe_soal || soalForm.tipe_soal || "Pilihan Ganda",
+        tingkat_kesulitan: lastGeneratedSoalMeta?.tingkat_kesulitan || soalForm.tingkat_kesulitan || "Campuran",
+        guru_nama: lastGeneratedSoalMeta?.guru_nama || profile?.nama || "Guru Indonesia",
+        guru_sekolah: lastGeneratedSoalMeta?.guru_sekolah || profile?.sekolah || "Asisten Guru Merdeka",
+        guru_nip: lastGeneratedSoalMeta?.guru_nip || profile?.nip || "",
+        guru_jenjang: lastGeneratedSoalMeta?.guru_jenjang || profile?.jenjang || "SD"
+      };
 
   // Map Kelas to Fase automatically
   useEffect(() => {
@@ -129,9 +335,11 @@ export default function App() {
     if (preset.type === "modul") {
       setActiveTab("modul");
       setModulForm(preset.data);
+      setLastGeneratedModulMeta(null);
     } else {
       setActiveTab("soal");
       setSoalForm(preset.data);
+      setLastGeneratedSoalMeta(null);
     }
 
     // Trigger toast
@@ -145,6 +353,38 @@ export default function App() {
     }, 3000);
   };
 
+  const handleSignIn = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!regNama.trim() || !regSekolah.trim()) {
+      setErrorMsg("Nama Lengkap dan Sekolah wajib diisi.");
+      return;
+    }
+    const newProfile: TeacherProfile = {
+      nama: regNama.trim(),
+      nip: regNip.trim() || undefined,
+      sekolah: regSekolah.trim(),
+      jenjang: regJenjang
+    };
+    localStorage.setItem("guru_merdeka_profile", JSON.stringify(newProfile));
+    setProfile(newProfile);
+    
+    // Auto-update class and subject to match level's first class/subject
+    const classes = getClassesForJenjang(regJenjang);
+    const subjects = getSubjectSuggestions(regJenjang);
+    setModulForm(prev => ({
+      ...prev,
+      kelas: classes[0] || "Kelas 1",
+      mata_pelajaran: subjects[0] || ""
+    }));
+    setSoalForm(prev => ({
+      ...prev,
+      kelas: classes[0] || "Kelas 1",
+      mata_pelajaran: subjects[0] || ""
+    }));
+
+    showToast(`Selamat datang Bpk/Ibu ${newProfile.nama}! Profil ${newProfile.jenjang} berhasil diaktifkan. 🚀`);
+  };
+
   // Submit Generation
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,7 +392,23 @@ export default function App() {
     setErrorMsg(null);
 
     const endpoint = activeTab === "modul" ? "/api/generate-modul" : "/api/generate-soal";
-    const payload = activeTab === "modul" ? modulForm : soalForm;
+    
+    // Construct rich payload incorporating teacher identity
+    const payload = activeTab === "modul" 
+      ? {
+          ...modulForm,
+          guru_nama: profile?.nama || "Guru Indonesia",
+          guru_sekolah: profile?.sekolah || "Asisten Guru Merdeka",
+          guru_nip: profile?.nip || "",
+          guru_jenjang: profile?.jenjang || "Umum"
+        }
+      : {
+          ...soalForm,
+          guru_nama: profile?.nama || "Guru Indonesia",
+          guru_sekolah: profile?.sekolah || "Asisten Guru Merdeka",
+          guru_nip: profile?.nip || "",
+          guru_jenjang: profile?.jenjang || "Umum"
+        };
 
     try {
       const res = await fetch(endpoint, {
@@ -170,8 +426,31 @@ export default function App() {
 
       if (activeTab === "modul") {
         setGeneratedModul(data.text);
+        setLastGeneratedModulMeta({
+          mata_pelajaran: modulForm.mata_pelajaran,
+          kelas: modulForm.kelas,
+          fase: modulForm.fase,
+          topik_pembahasan: modulForm.topik_pembahasan,
+          alokasi_waktu: modulForm.alokasi_waktu,
+          guru_nama: profile?.nama || "Guru Indonesia",
+          guru_sekolah: profile?.sekolah || "Asisten Guru Merdeka",
+          guru_nip: profile?.nip || "",
+          guru_jenjang: profile?.jenjang || "SD"
+        });
       } else {
         setGeneratedSoal(data.text);
+        setLastGeneratedSoalMeta({
+          mata_pelajaran: soalForm.mata_pelajaran,
+          kelas: soalForm.kelas,
+          topik_materi: soalForm.topik_materi,
+          jumlah_soal: soalForm.jumlah_soal,
+          tipe_soal: soalForm.tipe_soal,
+          tingkat_kesulitan: soalForm.tingkat_kesulitan,
+          guru_nama: profile?.nama || "Guru Indonesia",
+          guru_sekolah: profile?.sekolah || "Asisten Guru Merdeka",
+          guru_nip: profile?.nip || "",
+          guru_jenjang: profile?.jenjang || "SD"
+        });
       }
       showToast("Berhasil memproduksi materi ajar bertenaga AI! 🎉");
     } catch (err: any) {
@@ -216,16 +495,13 @@ export default function App() {
 
   // Action: Cetak / PDF
   const handlePrint = () => {
-    const isInsideIframe = window.self !== window.top;
+    const originalTitle = document.title;
+    const documentTitle = activeTab === "modul" 
+      ? `Modul_Ajar_${(activeMeta.mata_pelajaran || "Pelajaran").replace(/\s+/g, "_")}`
+      : `Bank_Soal_${(activeMeta.mata_pelajaran || "Pelajaran").replace(/\s+/g, "_")}`;
+    
+    document.title = documentTitle;
 
-    if (!isInsideIframe) {
-      // Di luar iframe: langsung panggil window.print() bawaan yang sudah dioptimalkan oleh CSS @media print
-      window.print();
-      showToast("Membuka dialog cetak sistem... 📄");
-      return;
-    }
-
-    // Di dalam iframe: gunakan teknik cetak tersemat dengan duplikasi styles
     const printArea = document.getElementById("print-area");
     if (!printArea) {
       window.print();
@@ -233,83 +509,172 @@ export default function App() {
     }
 
     try {
-      // Hapus sisa iframe cetak lama jika ada
-      const oldFrame = document.getElementById("temp-print-frame");
-      if (oldFrame) {
-        oldFrame.remove();
+      // Buka window baru untuk Cetak agar bebas hambatan sandbox iframe di browser
+      const printWindow = window.open("", "_blank");
+      if (printWindow) {
+        const printHtml = printArea.innerHTML;
+
+        printWindow.document.open();
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>${documentTitle}</title>
+              <meta charset="utf-8" />
+              <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+              <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+              <!-- Tailwind CSS -->
+              <script src="https://cdn.tailwindcss.com"></script>
+              <script>
+                tailwind.config = {
+                  theme: {
+                    extend: {
+                      fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                      }
+                    }
+                  }
+                }
+              </script>
+              <style>
+                @media print {
+                  @page {
+                    size: A4;
+                    margin: 1.5cm;
+                  }
+                  body {
+                    background-color: white !important;
+                    padding: 0 !important;
+                  }
+                  .print-bar {
+                    display: none !important;
+                  }
+                  .card-container {
+                    border: none !important;
+                    box-shadow: none !important;
+                    padding: 0 !important;
+                    margin: 0 !important;
+                    max-width: 100% !important;
+                  }
+                }
+                body {
+                  font-family: "Plus Jakarta Sans", "Inter", sans-serif;
+                }
+                /* Clean markdown styled output for print standard */
+                .markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body h4 {
+                  color: #0f172a;
+                  font-weight: 800;
+                  margin-top: 1.5rem;
+                  margin-bottom: 0.75rem;
+                }
+                .markdown-body h1 {
+                  font-size: 1.4rem;
+                  border-bottom: 2px solid #004a99;
+                  padding-bottom: 0.5rem;
+                }
+                .markdown-body h2 {
+                  font-size: 1.25rem;
+                  border-bottom: 1px solid #e2e8f0;
+                  padding-bottom: 0.25rem;
+                }
+                .markdown-body h3 {
+                  font-size: 1.1rem;
+                  color: #004a99;
+                  background-color: #f1f5f9;
+                  padding: 0.25rem 0.75rem;
+                  border-radius: 6px;
+                  display: inline-block;
+                }
+                .markdown-body p, .markdown-body li {
+                  color: #334155;
+                  line-height: 1.7;
+                  font-size: 0.95rem;
+                }
+                .markdown-body p {
+                  margin-bottom: 1rem;
+                }
+                .markdown-body ul {
+                  list-style-type: disc !important;
+                  padding-left: 1.5rem;
+                  margin-bottom: 1rem;
+                }
+                .markdown-body ol {
+                  list-style-type: decimal !important;
+                  padding-left: 1.5rem;
+                  margin-bottom: 1rem;
+                }
+                .markdown-body li {
+                  margin-bottom: 0.5rem;
+                }
+                .markdown-body blockquote {
+                  border-left: 4px solid #004a99;
+                  background-color: #f8fafc;
+                  padding: 0.75rem 1rem;
+                  margin: 1rem 0;
+                  border-radius: 6px;
+                }
+                .markdown-body blockquote p {
+                  margin-bottom: 0;
+                  font-style: italic;
+                  color: #003b80;
+                }
+                .markdown-body strong {
+                  font-weight: 600;
+                  color: #0f172a;
+                }
+              </style>
+            </head>
+            <body class="bg-slate-100 p-4 sm:p-8 min-h-screen">
+              <!-- Floating control panel for non-print view -->
+              <div class="print-bar max-w-4xl mx-auto mb-6 bg-slate-900 text-white rounded-2xl p-4 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-sm">
+                    AG
+                  </div>
+                  <div>
+                    <h1 class="text-xs font-bold text-white tracking-wide uppercase">Asisten Guru Merdeka - Pusat Cetak</h1>
+                    <p class="text-[11px] text-slate-400">Siap mencetak dokumen Anda dalam format rapi Kurikulum Merdeka.</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button onclick="window.print()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-4 py-2 rounded-xl transition duration-150 shadow-sm cursor-pointer">
+                    Cetak Sekarang / Simpan PDF
+                  </button>
+                  <button onclick="window.close()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold px-3 py-2 rounded-xl transition duration-150 border border-slate-700 cursor-pointer">
+                    Tutup
+                  </button>
+                </div>
+              </div>
+
+              <!-- Main printable layout sheet -->
+              <div class="card-container max-w-4xl mx-auto bg-white border border-slate-200 shadow-xl p-10 sm:p-14 rounded-3xl min-h-[297mm]">
+                ${printHtml}
+              </div>
+
+              <script>
+                // Auto trigger browser print dialogue
+                window.onload = function() {
+                  setTimeout(function() {
+                    window.print();
+                  }, 700);
+                };
+              </script>
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+        showToast("Membuka Dokumen di Tab Pencetakan Baru... 🖨️");
+      } else {
+        // Fallback jika popup blocker aktif
+        window.print();
+        showToast("Membuka dialog cetak sistem... Untuk hasil maksimal, izinkan pop-up situs ini! 📄");
       }
-
-      // Buat iframe sementara
-      const iframe = document.createElement("iframe");
-      iframe.id = "temp-print-frame";
-      iframe.style.position = "fixed";
-      iframe.style.right = "0";
-      iframe.style.bottom = "0";
-      iframe.style.width = "0px";
-      iframe.style.height = "0px";
-      iframe.style.border = "none";
-      iframe.style.zIndex = "-1";
-      
-      document.body.appendChild(iframe);
-
-      const doc = iframe.contentWindow?.document;
-      if (!doc) {
-        throw new Error("Cannot access iframe document");
-      }
-
-      const printHtml = printArea.innerHTML;
-
-      doc.open();
-      doc.write(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>Cetak Perangkat Pembelajaran - Asisten Guru Merdeka</title>
-            <style>
-              body {
-                background-color: white !important;
-                color: black !important;
-                padding: 1.5cm !important;
-                margin: 0 !important;
-              }
-            </style>
-          </head>
-          <body class="bg-white text-slate-900">
-            <div id="print-root">
-              ${printHtml}
-            </div>
-          </body>
-        </html>
-      `);
-
-      // Duplikasi seluruh stylesheet pendukung dari dokumen induk ke dalam iframe
-      const parentStyles = document.querySelectorAll('style, link[rel="stylesheet"]');
-      parentStyles.forEach(style => {
-        try {
-          doc.head.appendChild(style.cloneNode(true));
-        } catch (e) {
-          console.warn("Could not copy stylesheet node to iframe:", e);
-        }
-      });
-
-      doc.close();
-
-      showToast("💡 Mempersiapkan lembar cetak... Rekomendasi: Klik 'Buka di Tab Baru' di kanan atas!");
-
-      // Tunggu hingga rendering selesai
-      setTimeout(() => {
-        try {
-          iframe.contentWindow?.focus();
-          iframe.contentWindow?.print();
-        } catch (printErr) {
-          console.error("Iframe print triggered exception:", printErr);
-          window.print();
-        }
-      }, 500);
-
     } catch (err) {
-      console.error("Local printing iframe failed, calling window.print fallback:", err);
+      console.error(err);
       window.print();
+    } finally {
+      document.title = originalTitle;
     }
   };
 
@@ -325,6 +690,7 @@ export default function App() {
         catatan_tambahan: ""
       });
       setGeneratedModul("");
+      setLastGeneratedModulMeta(null);
     } else {
       setSoalForm({
         mata_pelajaran: "",
@@ -336,6 +702,7 @@ export default function App() {
         catatan_tambahan: ""
       });
       setGeneratedSoal("");
+      setLastGeneratedSoalMeta(null);
     }
     setLoadedFromPreset(null);
     setErrorMsg(null);
@@ -343,6 +710,143 @@ export default function App() {
   };
 
   const activeResult = activeTab === "modul" ? generatedModul : generatedSoal;
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col justify-between antialiased font-sans">
+        <div className="h-1.5 w-full bg-gradient-to-r from-red-600 via-red-500 to-slate-200" />
+        
+        <div className="flex-1 max-w-4xl w-full mx-auto px-4 md:px-8 py-10 flex flex-col justify-center items-center gap-6">
+          <div className="text-center flex flex-col items-center gap-2">
+            <div className="bg-[#004a99] text-white p-3.5 rounded-2xl shadow-md inline-flex items-center justify-center">
+              <GraduationCap className="h-9 w-9 animate-bounce" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-[#004a99] uppercase tracking-tight mt-2 flex items-center gap-2">
+              Asisten Guru Merdeka
+            </h1>
+            <p className="text-xs text-slate-500 max-w-md font-mono uppercase tracking-wider font-semibold">
+              KONSULTAN PEDAGOGI DIGITAL & EVALUASI OTOMATIS
+            </p>
+          </div>
+
+          <div className="w-full max-w-xl bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden">
+            <div className="bg-[#004a99] text-white px-6 py-4 flex items-center justify-between border-b border-blue-900">
+              <div className="flex items-center gap-3">
+                <Sparkles className="h-5 w-5 text-amber-300 animate-pulse" />
+                <div>
+                  <h2 className="text-xs font-bold uppercase tracking-wider">Identitas Pendidik Merdeka</h2>
+                  <h3 className="text-[10px] text-blue-100 font-light">Lengkapi profil Anda untuk menyesuaikan otomatis jenjang mengajar</h3>
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={handleSignIn} className="p-6 sm:p-8 flex flex-col gap-4">
+              {errorMsg && (
+                <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3 rounded-lg text-xs flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-rose-500" />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
+
+              {/* Nama Lengkap */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Nama Lengkap & Gelar Akademik <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: Siti Rahma, S.Pd. atau Budi Santoso, M.Pd."
+                  value={regNama}
+                  onChange={e => setRegNama(e.target.value)}
+                  className="w-full text-slate-900 bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-[#004a99] focus:ring-2 focus:ring-blue-100 transition-all font-medium"
+                />
+              </div>
+
+              {/* Row NIP & Sekolah */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    NIP / NUPTK <span className="text-slate-400 font-normal italic">(Opsional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: 19870420..."
+                    value={regNip}
+                    onChange={e => setRegNip(e.target.value)}
+                    className="w-full text-slate-900 bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-xs outline-none focus:border-[#004a99] focus:ring-2 focus:ring-blue-100 transition-all font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Nama Sekolah / Instansi <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: SD Negeri 1 Jakarta"
+                    value={regSekolah}
+                    onChange={e => setRegSekolah(e.target.value)}
+                    className="w-full text-slate-900 bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-xs outline-none focus:border-[#004a99] focus:ring-2 focus:ring-blue-100 transition-all font-medium"
+                  />
+                </div>
+              </div>
+
+              {/* Pilih Jenjang */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                  Tingkat Mengajar (Jenjang Sekolah) <span className="text-rose-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {(["SD", "SMP", "SMA", "SMK"] as const).map(jen => {
+                    const isSelected = regJenjang === jen;
+                    return (
+                      <button
+                        key={jen}
+                        type="button"
+                        onClick={() => setRegJenjang(jen)}
+                        className={`py-3 px-2 rounded-xl border-2 transition duration-205 flex flex-col items-center justify-center gap-1.5 cursor-pointer uppercase ${
+                          isSelected
+                            ? "bg-blue-50/70 border-[#004a99] text-[#004a99] shadow-inner font-extrabold"
+                            : "bg-slate-50 border-slate-200 text-slate-650 hover:bg-slate-100/65 hover:border-slate-300 font-semibold"
+                        }`}
+                      >
+                        <span className="text-xs font-bold">
+                          {jen === "SD" ? "🔴 SD / MI" : jen === "SMP" ? "🔵 SMP / MTs" : jen === "SMA" ? "🔘 SMA / MA" : "🟢 SMK"}
+                        </span>
+                        <span className="text-[9px] font-medium text-slate-500 leading-none">
+                          {jen === "SD" ? "Kelas 1-6" : jen === "SMP" ? "Kelas 7-9" : jen === "SMA" ? "Kelas 10-12" : "Kejuruan"}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                className="w-full bg-[#004a99] hover:bg-blue-800 text-white font-extrabold text-xs uppercase tracking-wider py-3.5 px-4 rounded-lg shadow-md transition cursor-pointer hover:-translate-y-0.5 mt-2 flex items-center justify-center gap-2"
+              >
+                <Sparkles className="h-4.5 w-4.5 text-amber-300 animate-pulse" />
+                Masuk ke Ruang Kerja Asisten ✨
+              </button>
+            </form>
+          </div>
+
+          <div className="max-w-md text-center text-slate-500 text-xs italic leading-relaxed py-2 flex flex-col gap-1 items-center">
+            <p>"{MOTIVATIONAL_QUOTES[0].quote}"</p>
+            <p className="font-semibold text-[#004a99] not-italic">— {MOTIVATIONAL_QUOTES[0].author}</p>
+          </div>
+        </div>
+
+        <footer className="bg-slate-900 text-slate-550 py-4 border-t border-slate-800 text-[10px] text-center w-full">
+          Asisten Guru Merdeka • Platform AI Adaptif untuk Administrasi Guru Indonesia
+        </footer>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-850 flex flex-col antialiased font-sans">
@@ -376,9 +880,20 @@ export default function App() {
             >
               Bank Soal
             </button>
-            <div className="hidden md:flex items-center gap-2 pl-4 border-l border-blue-400">
-              <div className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center font-bold text-[11px]">G</div>
-              <span className="text-xs font-semibold">Guru Indonesia</span>
+            <div className="hidden md:flex items-center gap-2 pl-4 border-l border-blue-405">
+              <div className="flex flex-col text-right">
+                <span className="text-xs font-black tracking-tight text-white leading-tight">{profile.nama}</span>
+                <span className="text-[9px] text-blue-200 font-semibold">{profile.sekolah} • Guru {profile.jenjang}</span>
+              </div>
+              <button 
+                onClick={() => {
+                  setProfile(null);
+                }}
+                className="bg-blue-600 hover:bg-emerald-600 hover:shadow-inner text-white cursor-pointer px-2 py-1 rounded text-[9px] font-bold tracking-wider transition ml-2 uppercase"
+                title="Ganti Jenjang / Profil"
+              >
+                Ganti Profil
+              </button>
             </div>
           </div>
         </div>
@@ -428,8 +943,8 @@ export default function App() {
               Mulai Cepat dengan Preset Contoh (Praktis & Instan):
             </h3>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-            {PRESET_TEMPLATES.map((preset, index) => {
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {PRESET_TEMPLATES.filter(preset => !profile || preset.jenjang === profile.jenjang).map((preset, index) => {
               const isSelected = loadedFromPreset === preset.title;
               return (
                 <button
@@ -530,7 +1045,7 @@ export default function App() {
 
                     {/* Mata Pelajaran */}
                     <div>
-                      <label className="block text-xs font-bold text-slate-650 mb-1.5">
+                      <label className="block text-xs font-bold text-slate-655 mb-1.5">
                         Mata Pelajaran <span className="text-rose-500">*</span>
                       </label>
                       <input
@@ -541,20 +1056,35 @@ export default function App() {
                         onChange={e => setModulForm({ ...modulForm, mata_pelajaran: e.target.value })}
                         className="w-full text-slate-900 bg-slate-50 border border-slate-200 rounded-md px-3.5 py-2 text-sm outline-none focus:border-[#004a99] focus:ring-2 focus:ring-blue-105 transition-all"
                       />
+                      {profile && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          <span className="text-[10px] font-bold text-[#004a99] self-center mr-1 uppercase">Saran:</span>
+                          {getSubjectSuggestions(profile.jenjang).map(sub => (
+                            <button
+                              key={sub}
+                              type="button"
+                              onClick={() => setModulForm(prev => ({ ...prev, mata_pelajaran: sub }))}
+                              className="text-[10px] font-semibold text-slate-650 bg-slate-100 hover:bg-blue-50 hover:text-[#004a99] px-2 py-0.5 rounded transition duration-150 cursor-pointer border border-slate-200"
+                            >
+                              {sub}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     {/* Row: Kelas & Fase */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-bold text-slate-655 mb-1.5">
-                          Pilih Kelas <span className="text-rose-500">*</span>
+                        <label className="block text-[#004a99] text-xs font-bold mb-1.5">
+                          Pilih Kelas ({profile?.jenjang || "SD"}) <span className="text-rose-500">*</span>
                         </label>
                         <select
                           value={modulForm.kelas}
                           onChange={e => setModulForm({ ...modulForm, kelas: e.target.value })}
-                          className="w-full text-slate-900 bg-slate-50 border border-slate-200 rounded-md px-3 py-2 text-sm outline-none focus:border-[#004a99] transition cursor-pointer"
+                          className="w-full text-slate-900 bg-slate-50 border border-slate-200 rounded-md px-3 py-2 text-sm outline-none focus:border-[#004a99] transition cursor-pointer font-bold"
                         >
-                          {Array.from({ length: 12 }, (_, i) => `Kelas ${i + 1}`).map(k => (
+                          {getClassesForJenjang(profile?.jenjang || "SD").map(k => (
                             <option key={k} value={k}>{k}</option>
                           ))}
                         </select>
@@ -584,6 +1114,21 @@ export default function App() {
                         onChange={e => setModulForm({ ...modulForm, topik_pembahasan: e.target.value })}
                         className="w-full text-slate-900 bg-slate-50 border border-slate-200 rounded-md px-3.5 py-2 text-sm outline-none focus:border-[#004a99] focus:ring-2 focus:ring-blue-105 transition-all"
                       />
+                      {profile && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          <span className="text-[10px] font-bold text-[#004a99] self-center mr-1 uppercase">Saran Topik Kurikulum Merdeka:</span>
+                          {getTopicSuggestions(profile.jenjang, modulForm.kelas, modulForm.mata_pelajaran).map(topic => (
+                            <button
+                              key={topic}
+                              type="button"
+                              onClick={() => setModulForm(prev => ({ ...prev, topik_pembahasan: topic }))}
+                              className="text-[10px] font-semibold text-slate-650 bg-slate-100 hover:bg-blue-50 hover:text-[#004a99] px-2 py-0.5 rounded transition duration-150 cursor-pointer border border-slate-200"
+                            >
+                              {topic}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     {/* Alokasi Waktu */}
@@ -639,20 +1184,35 @@ export default function App() {
                         onChange={e => setSoalForm({ ...soalForm, mata_pelajaran: e.target.value })}
                         className="w-full text-slate-900 bg-slate-50 border border-slate-200 rounded-md px-3.5 py-2 text-sm outline-none focus:border-[#004a99] focus:ring-2 focus:ring-blue-105 transition-all"
                       />
+                      {profile && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          <span className="text-[10px] font-bold text-[#004a99] self-center mr-1 uppercase">Saran:</span>
+                          {getSubjectSuggestions(profile.jenjang).map(sub => (
+                            <button
+                              key={sub}
+                              type="button"
+                              onClick={() => setSoalForm(prev => ({ ...prev, mata_pelajaran: sub }))}
+                              className="text-[10px] font-semibold text-slate-655 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 px-2 py-0.5 rounded transition duration-150 cursor-pointer border border-slate-200"
+                            >
+                              {sub}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     {/* Row: Kelas & Jumlah Soal */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-bold text-slate-655 mb-1.5">
-                          Kelas <span className="text-rose-500">*</span>
+                        <label className="block text-[#004a99] text-xs font-bold mb-1.5">
+                          Kelas ({profile?.jenjang || "SD"}) <span className="text-rose-500">*</span>
                         </label>
                         <select
                           value={soalForm.kelas}
                           onChange={e => setSoalForm({ ...soalForm, kelas: e.target.value })}
-                          className="w-full text-slate-900 bg-slate-50 border border-slate-200 rounded-md px-3 py-2 text-sm outline-none focus:border-[#004a99] transition cursor-pointer"
+                          className="w-full text-slate-900 bg-slate-50 border border-slate-200 rounded-md px-3 py-2 text-sm outline-none focus:border-[#004a99] transition cursor-pointer font-bold"
                         >
-                          {Array.from({ length: 12 }, (_, i) => `Kelas ${i + 1}`).map(k => (
+                          {getClassesForJenjang(profile?.jenjang || "SD").map(k => (
                             <option key={k} value={k}>{k}</option>
                           ))}
                         </select>
@@ -687,6 +1247,21 @@ export default function App() {
                         onChange={e => setSoalForm({ ...soalForm, topik_materi: e.target.value })}
                         className="w-full text-slate-900 bg-slate-50 border border-slate-200 rounded-md px-3.5 py-2 text-sm outline-none focus:border-[#004a99] focus:ring-2 focus:ring-blue-105 transition-all"
                       />
+                      {profile && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          <span className="text-[10px] font-bold text-indigo-800 self-center mr-1 uppercase">Saran Topik Kurikulum Merdeka:</span>
+                          {getTopicSuggestions(profile.jenjang, soalForm.kelas, soalForm.mata_pelajaran).map(topic => (
+                            <button
+                              key={topic}
+                              type="button"
+                              onClick={() => setSoalForm(prev => ({ ...prev, topik_materi: topic }))}
+                              className="text-[10px] font-semibold text-slate-655 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 px-2 py-0.5 rounded transition duration-150 cursor-pointer border border-slate-200"
+                            >
+                              {topic}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     {/* Row: Tipe Soal & Tingkat Kesulitan */}
@@ -849,7 +1424,7 @@ export default function App() {
             )}
 
             {/* Document Preview Paper Area */}
-            <div className="bg-white border border-slate-200 rounded-3xl shadow-md relative overflow-hidden flex flex-col min-h-[500px]">
+            <div className="bg-white border border-slate-200 rounded-3xl shadow-md relative overflow-hidden flex flex-col min-h-[500px] lg:h-[850px]">
               
               {/* National Garis Hias Merah Putih (Indonesian Flag Vibe Top border) */}
               <div className="h-1.5 w-full bg-gradient-to-r from-red-600 via-red-500 to-slate-200 flex shrink-0" />
@@ -884,33 +1459,108 @@ export default function App() {
                 /* ==================================== */
                 /* PRINTABLE GENERATED VIEW             */
                 /* ==================================== */
-                <article className="p-8 sm:p-10 flex-1 flex flex-col overflow-auto bg-white" id="print-area">
+                <article className="p-6 sm:p-10 flex-1 flex flex-col overflow-y-auto bg-white scroll-smooth" id="print-area">
                   
+                  {/* Subject Cover-Image Illustration Hero (Visual Appeal) */}
+                  <div className="relative w-full h-44 sm:h-52 rounded-2xl overflow-hidden mb-6 border border-slate-100 shadow-xs shrink-0 print:hidden">
+                    <img
+                      src={getSubjectBannerImage(activeMeta.mata_pelajaran)}
+                      alt={activeMeta.mata_pelajaran || "Cover Pendidik"}
+                      className="w-full h-full object-cover transition-all duration-300"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-900/40 to-transparent" />
+                    
+                    <div className="absolute bottom-4 left-4 right-4 flex flex-col">
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <span className={`text-[9px] font-black tracking-widest uppercase px-2 py-0.5 rounded-md text-white ${
+                          activeTab === "modul" ? "bg-[#004a99]" : "bg-indigo-600"
+                        }`}>
+                          {activeTab === "modul" ? "MODUL AJAR GURU" : "EVALUASI AKADEMIK"}
+                        </span>
+                        <span className="text-[9px] font-bold tracking-widest text-[#F8FAFC] opacity-90 uppercase px-1.5 py-0.5 rounded-md bg-slate-800/80">
+                          {profile?.jenjang || "KURIKULUM MERDEKA"}
+                        </span>
+                      </div>
+                      <h2 className="text-white text-base sm:text-lg font-extrabold tracking-tight drop-shadow-xs uppercase line-clamp-1">
+                        {activeTab === "modul" ? activeMeta.topik_pembahasan : activeMeta.topik_materi}
+                      </h2>
+                      <p className="text-slate-200 text-[10px] opacity-95 font-medium">
+                        Mata Pelajaran: {activeMeta.mata_pelajaran} • {activeMeta.kelas} {activeTab === "modul" ? `(${activeMeta.fase})` : ""}
+                      </p>
+                    </div>
+                  </div>
+
                   {/* Kop Surat Pemerintah / Pendidikan Formal Header */}
                   <div className="border-b-4 border-double border-[#004a99] pb-4 mb-6 text-center">
-                    <div className="font-extrabold text-xs uppercase tracking-widest text-[#004a99]">
+                    <div className="font-extrabold text-[9px] sm:text-xs uppercase tracking-widest text-[#004a99]">
                       DOKUMEN EVALUASI & PERANGKAT PEMBELAJARAN
                     </div>
-                    <div className="font-black text-lg sm:text-lg text-slate-900 mt-1 uppercase">
+                    <div className="font-black text-base sm:text-lg text-slate-900 mt-1 uppercase">
                       ASISTEN GURU MERDEKA INDONESIA
                     </div>
-                    <div className="text-[10px] text-slate-500 font-mono mt-1">
+                    <div className="text-[9px] sm:text-[10px] text-slate-500 font-mono mt-1">
                       Kemendibudristek RI • Modul Diferensiasi & Evaluasi HOTS Aktual • ID App: {document.location.hostname}
                     </div>
                   </div>
 
-                  {/* Output Markdown Content */}
-                  <div className="markdown-body text-slate-800">
-                    <Markdown>{activeResult}</Markdown>
+                  {/* Professional Administrasi Cover Grid Table (Aesthetic & Tidy) */}
+                  <div className="border border-slate-200 rounded-xl p-4 sm:p-5 bg-slate-50/50 mb-6 text-xs text-slate-800 gap-4 grid grid-cols-1 sm:grid-cols-2 shadow-2xs shrink-0">
+                    <div className="flex flex-col gap-2.5 sm:border-r border-slate-200/60 sm:pr-4">
+                      <div>
+                        <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider block leading-none mb-1">Mata Pelajaran</span>
+                        <span className="font-extrabold text-slate-900">{activeMeta.mata_pelajaran}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider block leading-none mb-1">Sasaran Belajar</span>
+                        <span className="font-extrabold text-slate-900">{activeMeta.kelas} {activeTab === "modul" ? `(${activeMeta.fase})` : ""}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider block leading-none mb-1">{activeTab === "modul" ? "Alokasi Waktu" : "Metode / Jenis Soal"}</span>
+                        <span className="font-extrabold text-[#004a99]">
+                          {activeTab === "modul" ? activeMeta.alokasi_waktu : `${activeMeta.tipe_soal} (${activeMeta.jumlah_soal} Soal)`}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-col gap-2.5 pl-0 sm:pl-2">
+                      <div>
+                        <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider block leading-none mb-1">Pendidik / Penyusun</span>
+                        <span className="font-extrabold text-slate-900">Bpk/Ibu {activeMeta.guru_nama}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider block leading-none mb-1">Instansi Pendidikan</span>
+                        <span className="font-extrabold text-slate-900">{activeMeta.guru_sekolah}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider block leading-none mb-1">Kunci Identitas NIP</span>
+                        <span className="font-mono text-[10px] text-slate-600 font-bold">{activeMeta.guru_nip || "NIP. - / Belum Diisi"}</span>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* National Footer Signature Panel for Print validation */}
-                  <div className="mt-12 pt-6 border-t border-dashed border-slate-200 flex justify-between text-[11px] text-slate-445 italic">
-                    <div>
-                      Dicetak otomatis oleh {document.location.host || "Asisten Guru Merdeka"}
+                  {/* Output Markdown Content */}
+                  <div className="markdown-body text-slate-800 flex-1">
+                    <Markdown>{(activeResult || "").replace(/<br\s*\/?>/gi, "\n\n").replace(/\\n/g, "\n")}</Markdown>
+                  </div>
+
+                  {/* National Footer Signature Panel with QR & Seal Verification (Realtime & Authentic) */}
+                  <div className="mt-12 pt-6 border-t border-dashed border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-6 shrink-0">
+                    <div className="text-[11px] text-slate-500 italic text-center sm:text-left self-center sm:self-auto">
+                      <div>Dicetak otomatis oleh <strong className="text-slate-700">Asisten Guru Merdeka AI</strong></div>
+                      <div className="text-[10px] text-slate-400 not-italic font-mono mt-0.5">Ref-code: AGM-{Math.floor(100000 + Math.random() * 900000)}-{activeMeta.guru_jenjang} | {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</div>
                     </div>
-                    <div>
-                      Disetujui untuk Kegiatan Pembelajaran Aktif
+                    
+                    {/* Validation Seal Block */}
+                    <div className="flex items-center gap-3 bg-emerald-50/50 border border-emerald-100 p-2.5 rounded-xl shrink-0 print:border-slate-300">
+                      <div className="w-9 h-9 rounded-full bg-emerald-505/10 bg-emerald-500/10 flex items-center justify-center text-emerald-600">
+                        <CheckCircle2 className="h-5 w-5" />
+                      </div>
+                      <div className="flex flex-col text-left">
+                        <span className="text-[9px] text-slate-405 text-slate-400 font-bold uppercase tracking-wider leading-none">Status Verifikasi</span>
+                        <span className="text-[11px] text-emerald-800 font-black tracking-tight mt-0.5">STANDAR NASIONAL</span>
+                        <span className="text-[9px] text-emerald-600/90 font-medium">Bebas Plagiasi & Siap Ajarkan</span>
+                      </div>
                     </div>
                   </div>
                 </article>

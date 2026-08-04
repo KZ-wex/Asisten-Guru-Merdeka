@@ -30,7 +30,18 @@ function getGeminiClient() {
 // 1. Endpoint untuk membuat Modul Ajar (Kurikulum Merdeka)
 app.post("/api/generate-modul", async (req, res) => {
   try {
-    const { mata_pelajaran, kelas, fase, topik_pembahasan, alokasi_waktu, catatan_tambahan } = req.body;
+    const { 
+      mata_pelajaran, 
+      kelas, 
+      fase, 
+      topik_pembahasan, 
+      alokasi_waktu, 
+      catatan_tambahan,
+      guru_nama,
+      guru_sekolah,
+      guru_nip,
+      guru_jenjang
+    } = req.body;
 
     if (!mata_pelajaran || !kelas || !fase || !topik_pembahasan || !alokasi_waktu) {
       return res.status(400).json({ error: "Mohon isi semua field wajib untuk membuat Modul Ajar." });
@@ -41,10 +52,24 @@ app.post("/api/generate-modul", async (req, res) => {
     const systemInstruction = `Anda adalah seorang Pakar Kurikulum Merdeka dan Konsultan Pedagogi Senior di Kemendikbudristek Indonesia. Tugas Anda adalah membantu guru menyusun Modul Ajar yang komprehensif, kreatif, dan siap pakai dalam hitungan detik. Anda harus selalu mematuhi struktur resmi Kurikulum Merdeka.
 Guru di Indonesia mengalami kelelahan administratif. Modul Ajar yang Anda buat harus praktis, berpusat pada murid (student-centered), dan memiliki instruksi yang sangat jelas agar guru bisa langsung mempraktikkannya di kelas.
 
-Hasilkan Modul Ajar dengan struktur persis seperti di bawah ini menggunakan Markdown yang rapi:
+PENTING FORMAT BARIS/TEKS (SANGAT KRITIS):
+- JANGAN sekali-kali menggunakan atau menghasilkan tag HTML mentah seperti '<br>' atau '<br/>' di dalam seluruh teks Anda.
+- Selalu pisahkan paragraf/bagian dengan baris baru ganda standar Markdown (dua enter kosong) agar rapi, tertata, mudah dibaca, dan tampak profesional saat dicetak.
+- Sajikan sub-poin atau langkah pembelajaran dalam bentuk daftar berbutir (bullet list) atau daftar bernomor yang berpenampilan bersih, tidak menumpuk dalam satu paragraf panjang.
+
+Hasilkan Modul Ajar dengan struktur persis seperti di bawah ini menggunakan Markdown yang rapi. DI BAGIAN IDENTITAS MODUL, Anda WAJIB menyertakan nama guru pembuat, sekolah, dan NIP jika tersedia. Di bagian paling bawah dokumen (setelah Lampiran), Anda WAJIB menambahkan 'Lembar Pengesahan' yang rapi dengan tempat tanda tangan Guru Mata Pelajaran dan Kepala Sekolah.
 
 ### A. INFORMASI UMUM
-1. **Identitas Modul:** (Mata Pelajaran, Kelas, Fase, Topik, Alokasi Waktu)
+1. **Identitas Modul:**
+   - **Mata Pelajaran:** [Isi sesuai input]
+   - **Penyusun / Guru:** [Nama Guru yang disuplai]
+   - **Instansi / Sekolah:** [Nama Sekolah yang disuplai]
+   - **NIP / NUPTK:** [NIP Guru yang disuplai atau (-) jika tidak ada]
+   - **Tingkat / Jenjang:** [Jenjang yang disuplai, misal: SD / SMP / SMA / SMK]
+   - **Kelas:** [Isi sesuai input]
+   - **Fase:** [Isi sesuai input]
+   - **Topik Pembahasan:** [Isi sesuai input]
+   - **Alokasi Waktu:** [Isi sesuai input]
 2. **Kompetensi Awal:** (Kemampuan/pengetahuan prasyarat yang harus dimiliki siswa sebelum mempelajari materi ini secara realistis)
 3. **Profil Pelajar Pancasila:** (Pilih 2-3 elemen yang paling relevan dengan topik ini, jelaskan detail penerapannya/kegiatannya di dalam kelas dengan konkret)
 4. **Sarana & Prasarana:** (Berikan 2 opsi yang detail: Opsi untuk sekolah dengan fasilitas digital lengkap DAN opsi alternatif kreatif untuk sekolah dengan fasilitas minim/keterbatasan alat)
@@ -61,7 +86,10 @@ Hasilkan Modul Ajar dengan struktur persis seperti di bawah ini menggunakan Mark
 
 ### C. LAMPIRAN
 1. **Lembar Kerja Peserta Didik (LKPD):** (Buat 1 tugas kelompok atau individu yang interaktif, menantang, kontekstual, dan memiliki instruksi pengerjaan yang lengkap dan jelas)
-2. **Bahan Bacaan Guru & Peserta Didik:** (Ringkasan materi esensial singkat 2-3 paragraf bergaya bahasa edukatif, jelas, dan mudah dipahami sebagai panduan cepat)`;
+2. **Bahan Bacaan Guru & Peserta Didik:** (Ringkasan materi esensial singkat 2-3 paragraf bergaya bahasa edukatif, jelas, dan mudah dipahami sebagai panduan cepat)
+
+### D. LEMBAR PENGESAHAN
+[Buatlah bagian persetujuan resmi dengan layout teks Markdown yang rapi antara Guru Penyusun dan Kepala Sekolah lengkap dengan tanggal persetujuan]`;
 
     const promptMessage = `Buatlah Modul Ajar lengkap berdasar variabel berikut:
 Mata Pelajaran: ${mata_pelajaran}
@@ -70,6 +98,12 @@ Fase: ${fase}
 Topik Pembahasan: ${topik_pembahasan}
 Alokasi Waktu: ${alokasi_waktu}
 ${catatan_tambahan ? `Fokus atau Catatan Tambahan dari Guru: ${catatan_tambahan}` : ""}
+
+Identitas Guru Pendidik & Sekolah:
+- Nama Pendidik: ${guru_nama || "Guru Indonesia"}
+- Nama Sekolah/Instansi: ${guru_sekolah || "Asisten Guru Merdeka"}
+- NIP / NUPTK: ${guru_nip || "-"}
+- Jenjang Pendidikan Pas: ${guru_jenjang || "Umum"}
 
 Pastikan Modul Ajar dibuat sangat praktis, inspiratif, inovatif, dan ramah guru tanpa mengurangi kelengkapan isinya sesuai instruksi sistem. Gunakan bahasa Indonesia yang baik, benar, ramah, dan memotivasi.`;
 
@@ -92,7 +126,19 @@ Pastikan Modul Ajar dibuat sangat praktis, inspiratif, inovatif, dan ramah guru 
 // 2. Endpoint untuk membuat Bank Soal Evaluasi
 app.post("/api/generate-soal", async (req, res) => {
   try {
-    const { mata_pelajaran, kelas, topik_materi, jumlah_soal, tipe_soal, tingkat_kesulitan, catatan_tambahan } = req.body;
+    const { 
+      mata_pelajaran, 
+      kelas, 
+      topik_materi, 
+      jumlah_soal, 
+      tipe_soal, 
+      tingkat_kesulitan, 
+      catatan_tambahan,
+      guru_nama,
+      guru_sekolah,
+      guru_nip,
+      guru_jenjang
+    } = req.body;
 
     if (!mata_pelajaran || !kelas || !topik_materi || !jumlah_soal || !tipe_soal || !tingkat_kesulitan) {
       return res.status(400).json({ error: "Mohon isi semua field wajib untuk membuat Bank Soal." });
@@ -100,13 +146,30 @@ app.post("/api/generate-soal", async (req, res) => {
 
     const ai = getGeminiClient();
 
-    const systemInstruction = `Anda adalah Spesialis Evaluasi Pembelajaran dan Pembuat Soal Ujian Nasional terkemuka di Indonesia. Tugas Anda adalah membuat bank soal yang valid, adil, bermutu, dan berkualitas tinggi berdasarkan materi atau topik yang diberikan oleh guru.
-Bila tipe soal adalah "Pilihan Ganda", selalu berikan opsi A, B, C, D, E.
-Bila tipe soal adalah "Esai", buatlah soal esai uraian terstruktur dengan kunci jawaban yang jelas dan indikator penilaian yang konkret.
+    const systemInstruction = `Anda adalah Spesialis Evaluasi Pembelajaran dan Pembuat Soal Ujian Nasional terkemuka di Indonesia. Tugas Anda adalah membuat bank soal yang valid, adil, bermutu, dan berkualitas tinggi berdasarkan kriteria yang diberikan oleh guru dan selaras dengan standar Kurikulum Merdeka terbaru (berbasis stimulus kontekstual yang kaya, literasi-numerasi, menganalisis kasus, bukan sekadar hafalan).
+
+PENTING FORMAT BARIS/TEKS (SANGAT KRITIS):
+- JANGAN sekali-kali menggunakan atau menghasilkan tag HTML mentah seperti '<br>' atau '<br/>' di dalam seluruh teks Anda.
+- Selalu pisahkan paragraf/bagian dengan baris baru ganda standar Markdown (dua enter kosong) agar rapi, tertata, mudah dibaca, dan tampak profesional saat dicetak.
+- Pertanyaan, stimulus, opsi jawaban, dan kunci/pembahasan wajib dipisahkan dengan baris baru yang rapi, tidak menumpuk padat dalam satu paragraf.
+
+TENTANG OPSI JAWABAN PILIHAN GANDA:
+- Untuk jenjang sekolah dasar (SD/MI) dan menengah pertama (SMP/MTs), berikan tepat 4 opsi jawaban (A, B, C, D) per soal. Jangan memberikan opsi E.
+- Untuk jenjang menengah atas (SMA/MA) dan kejuran (SMK), berikan tepat 5 opsi jawaban (A, B, C, D, E) per soal.
+
+Bila tipe soal adalah "Esai", buatlah soal esai uraian terstruktur dengan kunci jawaban yang jelas dan indikator penilaian serta rubrik konkret.
 
 Sangat penting khususnya untuk Soal HOTS (Higher Order Thinking Skills): Berikan stimulus kontekstual yang kaya berupa cerita pendek, studi kasus nyata, tabel data, grafik ilmiah, kutipan berita, atau diagram terlebih dahulu sebelum pertanyaan diajukan. Siswa harus menganalisis stimulus tersebut untuk menjawab, bukan sekadar menghafal.
 
-Patuhi format hasil di bawah ini dengan Markdown yang rapi:
+Patuhi format hasil di bawah ini dengan Markdown yang rapi. Sertakan identitas pembuat soal secara formal pada bagian atas lembaran.
+
+---
+### HEADER DOKUMEN EVALUASI
+- **Mata Pelajaran:** [Isi sesuai input]
+- **Kelas:** [Isi sesuai input]
+- **Tingkat Kesulitan:** [Isi tingkat kesulitan]
+- **Penyusun:** [Nama Guru yang disuplai] - [Nama Sekolah yang disuplai]
+- **NIP:** [NIP yang disuplai atau (-) jika kosong]
 
 ---
 ### DAFTAR SOAL
@@ -116,7 +179,11 @@ Patuhi format hasil di bawah ini dengan Markdown yang rapi:
 ### KUNCI JAWABAN & RUBRIK PENILAIAN
 1. **Soal 1:** Kunci Jawaban: [Jawaban Benar]
    - **Pembahasan/Rubrik:** (Jelaskan secara ilmiah mengapa jawaban tersebut benar dan mengapa opsi lainnya salah, agar guru bisa menggunakannya untuk analisis remedial, pengayaan, atau evaluasi diagnostik).
-2. **Soal 2:** ... dan seterusnya [sesuai jumlah soal yang diminta]`;
+2. **Soal 2:** ... dan seterusnya [sesuai jumlah soal yang diminta]
+
+---
+### LEMBAR PERSETUJUAN (SIGNATURE)
+[Sediakan kolom tanda tangan formal di bagian akhir untuk Guru Mata Pelajaran dan Kepala Sekolah]`;
 
     const promptMessage = `Buatlah Bank Soal berdasarkan kriteria berikut:
 Mata Pelajaran: ${mata_pelajaran}
@@ -126,6 +193,12 @@ Jumlah Soal: ${jumlah_soal}
 Tipe Soal: ${tipe_soal}
 Tingkat Kesulitan: ${tingkat_kesulitan}
 ${catatan_tambahan ? `Instruksi tambahan dari guru: ${catatan_tambahan}` : ""}
+
+Identitas Pendidik Pembuat Soal:
+- Nama Pendidik: ${guru_nama || "Guru Indonesia"}
+- Nama Sekolah: ${guru_sekolah || "Asisten Guru Merdeka"}
+- NIP / NUPTK: ${guru_nip || "-"}
+- Tingkat / Jenjang: ${guru_jenjang || "Umum"}
 
 Pastikan semua soal sesuai untuk tingkat kelas dan topik materi yang ditentukan. Hasilkan output secara penuh sesuai petunjuk model.`;
 
